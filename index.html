@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f4f7fb" />
+  <meta name="app-version" content="2.0.0-draft" />
+  <title>2D 游標卡尺讀數練習</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到主要內容</a>
+
+  <header class="site-header">
+    <a class="brand" href="#main" aria-label="2D 游標卡尺讀數練習首頁">
+      <span class="brand-icon" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span><strong>游標卡尺</strong><small>Vernier caliper lab</small></span>
+    </a>
+    <nav class="mode-switch" aria-label="練習模式">
+      <button type="button" class="mode-button is-active" data-mode="explore">自由探索</button>
+      <button type="button" class="mode-button" data-mode="tutorial">讀數教學</button>
+      <button type="button" class="mode-button" data-mode="quiz">自我測驗</button>
+    </nav>
+    <button class="help-button" id="helpButton" type="button" aria-label="打開操作說明">?</button>
+  </header>
+
+  <main id="main">
+    <section class="intro" aria-labelledby="pageTitle">
+      <div>
+        <p class="kicker">Interactive measuring tool</p>
+        <h1 id="pageTitle">在卡尺上，<br />直接讀出答案。</h1>
+      </div>
+      <p id="modeDescription">拖動活動量爪或下方滑桿，主尺與游標尺會同步移動。刻線保持在同一平面，可直接比較。</p>
+    </section>
+
+    <section class="simulator" aria-labelledby="simulatorTitle">
+      <div class="simulator-topline">
+        <div>
+          <span class="step-label">01 / 模擬卡尺</span>
+          <h2 id="simulatorTitle">公制游標卡尺</h2>
+        </div>
+        <div class="top-controls">
+          <div class="precision-control" role="group" aria-label="選擇最小分度">
+            <span>最小分度</span>
+            <div>
+              <button type="button" data-lc="0.1">0.1 <small>mm</small></button>
+              <button type="button" class="is-active" data-lc="0.05">0.05 <small>mm</small></button>
+              <button type="button" data-lc="0.02">0.02 <small>mm</small></button>
+            </div>
+          </div>
+          <button class="zoom-toggle" id="zoomToggle" type="button" aria-pressed="true" title="切換完整尺身或刻度放大視圖">
+            <span id="zoomLabel">刻度放大</span><b id="zoomValue">1.85×</b>
+          </button>
+          <button class="alignment-toggle" id="alignmentToggle" type="button" aria-pressed="false" title="顯示與主尺吻合的游標刻線">
+            <i aria-hidden="true"></i><span id="alignmentLabel">顯示對齊線</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="workpiece-toolbar">
+        <div class="workpiece-picker" role="group" aria-label="選擇工件量測方式">
+          <span>工件量測</span>
+          <div>
+            <button type="button" class="is-active" data-workpiece="none">無工件</button>
+            <button type="button" data-workpiece="outer">量外徑</button>
+            <button type="button" data-workpiece="inner">量內徑</button>
+          </div>
+        </div>
+        <div class="workpiece-state" id="workpieceState" aria-live="polite">
+          <i id="contactDot" aria-hidden="true"></i>
+          <p><strong id="workpieceTitle">尚未放置工件</strong><small id="workpieceInstruction">選擇外徑或內徑開始量測</small></p>
+          <button type="button" id="replaceWorkpiece" hidden>更換工件</button>
+        </div>
+      </div>
+
+      <div class="caliper-frame">
+        <div class="caliper-meta">
+          <span id="scaleWindowLabel">刻度放大 1.85×</span>
+          <span id="frameStatus">活動量爪可拖曳</span>
+        </div>
+        <div class="svg-viewport" id="svgViewport">
+          <svg id="caliperSvg" viewBox="0 0 2180 560" role="img" aria-labelledby="svgTitle svgDesc">
+            <title id="svgTitle">可操作的二維游標卡尺</title>
+            <desc id="svgDesc">主尺與游標尺均可直接讀數。活動量爪可以水平拖動。</desc>
+          </svg>
+        </div>
+        <div class="drag-note" id="dragNote"><span aria-hidden="true">↔</span> 拖動活動量爪</div>
+      </div>
+
+      <div class="control-deck">
+        <div class="position-control" id="positionControl">
+          <div class="control-heading">
+            <label for="positionRange">調整位置</label>
+            <output id="positionOutput" for="positionRange">19.10 mm</output>
+          </div>
+          <input id="positionRange" type="range" min="0" max="3000" value="382" step="1" />
+          <div class="micro-buttons">
+            <button type="button" id="stepDown">− 1 格</button>
+            <button type="button" id="resetZero">歸零</button>
+            <button type="button" id="stepUp">＋ 1 格</button>
+          </div>
+        </div>
+
+        <div class="reading-display" id="readingDisplay" aria-live="polite">
+          <span id="readingLabel">當前讀數</span>
+          <strong><b id="readingValue">19.10</b> <small>mm</small></strong>
+          <span class="precision-note" id="precisionNote">最小分度 0.05 mm</span>
+        </div>
+
+        <div class="quiz-action" id="quizAction" hidden>
+          <p id="quizPrompt">請先直接從卡尺上讀數，想好再揭曉。</p>
+          <button type="button" class="primary-button" id="quizPrimary">顯示答案</button>
+          <small><kbd>Space</kbd> 或 <kbd>Enter</kbd></small>
+        </div>
+      </div>
+
+      <div class="answer-panel" id="answerPanel" aria-live="polite">
+        <span>讀數算式</span>
+        <p><b id="formulaMain">19</b> mm ＋ <b id="formulaIndex">2</b> × <b id="formulaLC">0.05</b> mm ＝ <strong id="formulaResult">19.10 mm</strong></p>
+      </div>
+    </section>
+
+    <section class="lessons" aria-labelledby="lessonsTitle">
+      <header class="lessons-header">
+        <div><p class="kicker">Reading guide</p><h2 id="lessonsTitle">讀數教學</h2></div>
+        <p>不用離開卡尺畫面，四步完成讀數。</p>
+      </header>
+
+      <div class="lesson-tabs" role="tablist" aria-label="讀數教學單元">
+        <button id="tab-parts" role="tab" aria-selected="true" aria-controls="panel-parts" tabindex="0" data-tab="parts">01 認識卡尺</button>
+        <button id="tab-precision" role="tab" aria-selected="false" aria-controls="panel-precision" tabindex="-1" data-tab="precision">02 三種分度</button>
+        <button id="tab-reading" role="tab" aria-selected="false" aria-controls="panel-reading" tabindex="-1" data-tab="reading">03 四步讀數</button>
+        <button id="tab-errors" role="tab" aria-selected="false" aria-controls="panel-errors" tabindex="-1" data-tab="errors">04 常見錯誤</button>
+        <button id="tab-measure" role="tab" aria-selected="false" aria-controls="panel-measure" tabindex="-1" data-tab="measure">05 工件量測</button>
+        <button id="tab-quiz" role="tab" aria-selected="false" aria-controls="panel-quiz" tabindex="-1" data-tab="quiz">06 開始測驗</button>
+      </div>
+
+      <article class="lesson-panel" id="panel-parts" role="tabpanel" aria-labelledby="tab-parts" data-panel="parts">
+        <div class="lesson-lead"><span>01</span><div><p class="kicker">Parts</p><h3>先找到兩把尺</h3><p>主尺負責整毫米，跟著活動量爪移動的游標尺負責不足 1 mm 的精細部分。</p></div></div>
+        <div class="part-list">
+          <button type="button" data-part="fixed"><span>A</span><strong>固定量爪</strong><small>量測起點</small></button>
+          <button type="button" data-part="moving"><span>B</span><strong>活動量爪</strong><small>沿主尺水平移動</small></button>
+          <button type="button" data-part="main"><span>C</span><strong>主尺</strong><small>讀取整毫米</small></button>
+          <button type="button" data-part="vernier"><span>D</span><strong>游標尺</strong><small>補上小數讀數</small></button>
+        </div>
+      </article>
+
+      <article class="lesson-panel" id="panel-precision" role="tabpanel" aria-labelledby="tab-precision" data-panel="precision" hidden>
+        <div class="lesson-lead"><span>02</span><div><p class="kicker">Least count</p><h3>分度越小，刻線越多</h3><p>點選任一分度，卡尺上會立即換成正確的游標格數。</p></div></div>
+        <div class="precision-cards">
+          <button type="button" data-set-lc="0.1"><b>0.1</b><small>mm</small><span>10 格游標</span><em>10 格＝主尺 9 mm</em></button>
+          <button type="button" data-set-lc="0.05"><b>0.05</b><small>mm</small><span>20 格游標</span><em>20 格＝主尺 19 mm</em></button>
+          <button type="button" data-set-lc="0.02"><b>0.02</b><small>mm</small><span>50 格游標</span><em>50 格＝主尺 49 mm</em></button>
+        </div>
+      </article>
+
+      <article class="lesson-panel" id="panel-reading" role="tabpanel" aria-labelledby="tab-reading" data-panel="reading" hidden>
+        <div class="lesson-lead"><span>03</span><div><p class="kicker">Four steps</p><h3>主尺先讀，游標再補</h3><p>點選步驟，卡尺會直接標示目前應觀察的位置。</p></div></div>
+        <ol class="reading-steps">
+          <li class="is-current"><button type="button" data-reading-step="1"><b>1</b><strong>找游標零線</strong><small>讀數從這條線開始。</small></button></li>
+          <li><button type="button" data-reading-step="2"><b>2</b><strong>讀主尺</strong><small>讀零線左側最後一格。</small></button></li>
+          <li><button type="button" data-reading-step="3"><b>3</b><strong>找吻合線</strong><small>上下最對齊的一條。</small></button></li>
+          <li><button type="button" data-reading-step="4"><b>4</b><strong>相加</strong><small>主尺值加游標值。</small></button></li>
+        </ol>
+        <div class="step-result" id="stepResult"><span>STEP 01</span><p>先找到游標尺的藍色 0 刻線，確認它落在主尺哪兩格之間。</p></div>
+      </article>
+
+      <article class="lesson-panel" id="panel-errors" role="tabpanel" aria-labelledby="tab-errors" data-panel="errors" hidden>
+        <div class="lesson-lead"><span>04</span><div><p class="kicker">Common mistakes</p><h3>讀錯通常發生在第一眼</h3><p>算式不難，方向與刻線編號才是常見失分處。</p></div></div>
+        <div class="mistakes">
+          <div><b>01</b><p><strong>看了零線右側</strong><span>主尺必須讀零線左側最後一個完整毫米。</span></p></div>
+          <div><b>02</b><p><strong>第 0 線也算進去</strong><span>游標刻線編號由 0 開始，不是由 1 開始。</span></p></div>
+          <div><b>03</b><p><strong>忘了乘最小分度</strong><span>第 7 線在 0.05 mm 下代表 0.35 mm。</span></p></div>
+          <div><b>04</b><p><strong>沒比較相鄰刻線</strong><span>找到接近的線後，再看左右哪條更吻合。</span></p></div>
+        </div>
+      </article>
+
+      <article class="lesson-panel" id="panel-measure" role="tabpanel" aria-labelledby="tab-measure" data-panel="measure" hidden>
+        <div class="lesson-lead"><span>05</span><div><p class="kicker">Workpiece measurement</p><h3>量爪接觸，才是量測值</h3><p>外徑要向內收合外測量爪；內徑要向外張開內測量爪。卡尺會在剛好碰到工件時停止。</p></div></div>
+        <div class="measure-cards">
+          <article>
+            <div class="measure-diagram outer" aria-hidden="true"><i></i><span></span><i></i></div>
+            <div><span>A</span><h4>量外徑</h4><p>把工件夾在外測量爪之間，向內收合至兩側完全接觸。</p><button type="button" data-workpiece-preset="outer">開始量外徑</button></div>
+          </article>
+          <article>
+            <div class="measure-diagram inner" aria-hidden="true"><i></i><span></span><i></i></div>
+            <div><span>B</span><h4>量內徑</h4><p>把內測量爪放進孔內，向外張開至兩側碰到內壁。</p><button type="button" data-workpiece-preset="inner">開始量內徑</button></div>
+          </article>
+        </div>
+      </article>
+
+      <article class="lesson-panel quiz-invite" id="panel-quiz" role="tabpanel" aria-labelledby="tab-quiz" data-panel="quiz" hidden>
+        <div class="lesson-lead"><span>06</span><div><p class="kicker">Self check</p><h3>先讀，再按一下揭曉</h3><p>不用輸入答案，也不計分。每題先自行讀取卡尺，準備好就查看完整算式。</p><button type="button" class="primary-button" id="startQuiz">開始自我測驗</button></div></div>
+        <div class="quiz-illustration" aria-hidden="true"><span>?</span><i></i><i></i><i></i><i></i><i></i><i></i><i></i><small>READ → REVEAL</small></div>
+      </article>
+    </section>
+  </main>
+
+  <footer><span>2D VERNIER CALIPER LAB · VERSION 2 DRAFT</span><span>公制 · 內徑與外徑量測 · 教學原型</span></footer>
+
+  <dialog id="helpDialog">
+    <form method="dialog">
+      <div><span>操作說明</span><button type="submit" aria-label="關閉">×</button></div>
+      <h2>直接在卡尺上讀數</h2>
+      <ol>
+        <li><b>移動</b><span>拖動活動量爪，或使用下方滑桿和微調鍵。</span></li>
+        <li><b>工件</b><span>選擇量外徑或量內徑，移動量爪直到顯示「量測完成」。</span></li>
+        <li><b>讀取</b><span>先讀游標零線左側的主尺值，再找吻合線。</span></li>
+        <li><b>測驗</b><span>題目會鎖定量爪；自行讀數後按一下揭曉。</span></li>
+      </ol>
+      <button type="submit" class="primary-button">知道了</button>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
